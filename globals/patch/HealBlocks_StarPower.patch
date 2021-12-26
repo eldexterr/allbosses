@@ -1,0 +1,11 @@
+% Heal Blocks now restore Star Power
+@Hook 106848 % 802E4FC8
+{
+    LABU    V0, 8010F51E % load Star Spirits
+    SLL	    V0, V0, 8
+    SAH     V0, 8010F520 % restore star power
+    % restore vanilla code
+    LBU	    V0, 0001 (S0)
+    J       802E4FD0
+    SWC1	F4, 0018 (S0)
+}

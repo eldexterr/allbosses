@@ -1,0 +1,11 @@
+@ $Function_8024522C
+{
+  [A4]  LA        A3, $Global_ItemHudScripts
+}
+
+/% Pole Sign - for testing purposes
+@ $Script_80247380 {
+  Call  GotoMap ( "tes_00" 0 )
+  Return
+  End
+}%/

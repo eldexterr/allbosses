@@ -1,0 +1,736 @@
+#new:Header $Header
+{
+[MainScript] $Script_Main
+[Background] 80200000
+[EntryList] $EntryList
+[EntryCount] 4
+[MapTattle]  $Function_GetTattle
+}
+
+#new:EntryList $EntryList
+{
+~Vec4f:Entry0
+~Vec4f:Entry1
+~Vec4f:Entry2
+~Vec4f:Entry3
+}
+
+% Override texture package
+#new:Function_Init $Function_Init
+{
+PUSH 	RA, A0, A1
+LIA 	A0, 800B0CF0
+LIA 	A1, "mim_tex"
+JAL 	~Func:sprintf
+RESERVED
+CLEAR   V0
+JPOP 	RA, A0, A1
+}
+
+#new:Script_Main $Script_Main
+{
+Call    SetSpriteShading  ( .Shading:mim_02 )
+Call    SetCamPerspective 	( .Cam:Default 00000003 00000019 00000010 00001000 )
+Call    SetCamBGColor     	( .Cam:Default 0 0 0 ) % black
+Call    SetCamEnabled       	( .Cam:Default .True )
+Call    SetCamLeadPlayer       	( .Cam:Default .False )
+Call    FadeOutMusic	   ( 00000000 00000001 ) % Stop Music
+Call    PlayAmbientSounds ( .AmbientSounds:Spooky )
+Set     *GameByte[000] .Story:Ch8_ReachedPeachsCastle
+Exec    $Script_MakeEntities
+Call    $Function_SetupFog
+Call    MakeNpcs ( 0 $NpcGroupList_tes01 )
+Exec    $Script_BindTriggers
+Exec    $TrackEntry
+Return
+End
+}
+
+#new:Function $Function_SetupFog
+{
+	PUSH    RA
+	% World Fog
+	JAL     ~Func:enable_world_fog
+	NOP
+	ADDIU   A0, R0, 950`
+	JAL     ~Func:set_world_fog_dist
+	ADDIU   A1, R0, 1000`
+	ADDIU   A0, R0, 10` % r
+	ADDIU   A1, R0, 10` % g
+	ADDIU   A2, R0, 10` % b
+	JAL     ~Func:set_world_fog_color
+	ADDIU   A3, R0, FF
+    % entities fog
+    JAL     ~Func:enable_entity_fog
+	NOP
+	ADDIU   A0, R0, 970`
+	JAL     ~Func:set_entity_fog_dist
+	ADDIU   A1, R0, 1000`
+	ADDIU   A0, R0, 0` % r
+	ADDIU   A1, R0, 0` % g
+	ADDIU   A2, R0, 0` % b
+	JAL     ~Func:set_entity_fog_color
+	ADDIU   V0, R0, 2
+	JPOP    RA
+}
+
+% Triggers
+
+#new:Script $Script_BindTriggers
+{
+    Bind    $Script_TriggerFight .Trigger:WallPressA ~Collider:col_fight 00000001 00000000 
+    Bind    $Script_Badges .Trigger:WallPressA ~Collider:col_badges 00000001 00000000 
+    Bind    $Script_Stats .Trigger:WallPressA ~Collider:col_stats 00000001 00000000 
+    Bind    $Script_Partners .Trigger:WallPressA ~Collider:col_partners 00000001 00000000 
+    Bind    $Script_Money .Trigger:WallPressA ~Collider:col_money 00000001 00000000 
+    Return
+    End
+}
+
+#new:Script $Script_TriggerFight
+{
+    SuspendOthers .True
+    Call    DisablePlayerInput ( .True )
+    Call    SetNpcVar ( 0 0 .True ) % start battle
+    Unbind
+    Return
+    End
+}
+
+#new:IntTable $BadgesTable
+{
+    .Item:SpinSmash
+    .Item:Multibounce
+    .Item:PowerPlusA
+    .Item:DodgeMaster
+    .Item:PowerBounce
+    .Item:SpikeShield
+    .Item:FirstAttack
+    .Item:HPPlusA
+    .Item:QuakeHammer
+    .Item:DoubleDip
+    .Item:SleepStomp
+    .Item:FireShield
+    .Item:QuickChange
+    .Item:DDownPound
+    .Item:DizzyStomp
+    .Item:PrettyLucky
+    .Item:FeelingFine
+    .Item:AttackFXA
+    .Item:AllorNothing
+    .Item:HPDrain
+    .Item:SlowGo
+    .Item:FPPlusA
+    .Item:MegaRush
+    .Item:IcePower
+    .Item:DefendPlusA
+    .Item:PayOff
+    .Item:MoneyMoney
+    .Item:ChillOut
+    .Item:HappyHeartA
+    .Item:ZapTap
+    .Item:RunawayPay
+    .Item:Refund
+    .Item:FlowerSaverA
+    .Item:TripleDip
+    .Item:HammerThrow
+    .Item:MegaQuake
+    .Item:SmashCharge
+    .Item:JumpCharge
+    .Item:SSmashChg
+    .Item:SJumpChg
+    .Item:PowerRush
+    .Item:LastStand
+    .Item:CloseCall
+    .Item:PUpDDown
+    .Item:LuckyDay
+    .Item:PDownDUp
+    .Item:PowerQuake
+    .Item:HeartFinder
+    .Item:FlowerFinder
+    .Item:SpinAttack
+    .Item:DizzyAttack
+    .Item:ISpy
+    .Item:SpeedySpin
+    .Item:BumpAttack
+    .Item:PowerJump
+    .Item:MegaJump
+    .Item:PowerSmash1
+    .Item:MegaSmash
+    .Item:DeepFocus1
+    .Item:ShrinkSmash
+    .Item:DDownJump
+    .Item:ShrinkStomp
+    .Item:DamageDodgeA
+    .Item:DeepFocus2
+    .Item:DeepFocus3
+    .Item:HPPlusB
+    .Item:FPPlusB
+    .Item:HappyHeartB
+    .Item:FlowerSaverB
+    .Item:DamageDodgeB
+    .Item:PowerPlusB
+    .Item:HappyFlowerA
+    .Item:HappyFlowerB
+    .Item:GroupFocus
+    .Item:Peekaboo
+    .Item:AttackFXD
+    .Item:AttackFXB
+    .Item:AttackFXE
+    .Item:AttackFXC
+    .Item:AttackFXF
+    .Item:HPPlusC
+    .Item:FPPlusC
+    .Item:Berserker
+    FFFFFFFF
+}
+
+% Give all badges in the game
+#new:Script $Script_Badges
+{
+    Call DisablePlayerInput ( .True )
+    UseIntBuffer $BadgesTable
+    Loop
+        Get1Int *Var0
+        If *Var0 == -1
+            BreakLoop
+        EndIf
+        Call  $PlayerHasBadge ( *Var0 *Var1 )
+        If *Var1 == .False
+            Call    AddBadge ( *Var0 .False )
+        EndIf
+    EndLoop
+    Call PlaySound ( 0010 ) % game saved
+    Call $WriteAddress ( 8010F298 0 30` .False .False ) % badgePoints
+    Call ShowMessageAtScreenPos ( $String_Badges A0 28 )
+    Call DisablePlayerInput ( .False )
+    Return
+    End
+}
+
+#string $String_Badges
+{
+[Style Inspect]
+All badges added[BR]
+and BP set to 30.
+[Wait][End]
+}
+
+% Set Mario Stats to the Maximum
+#new:Script $Script_Stats
+{
+    Call DisablePlayerInput ( .True )
+    Call ShowMessageAtScreenPos ( $String_Stats_Init A0 28 )
+    Call ShowChoice    ( $Choice_Stats )
+    Switch *Var0
+        Case == 0 % HP
+            Set *Var1 8010F293 % maxHP
+            Call SetMessageString ( $String_HP 0 )
+        Case == 1 % FP
+            Set *Var1 8010F296 % maxFP
+            Call SetMessageString ( $String_FP 0 )
+        Case == 2 % Gear
+            Call CloseMessage
+            Wait 3
+            Call $WriteAddress ( 8010F51E 1 0700 .False .False ) % Star Spirits
+            Call $WriteAddress ( 8010F520 1 0700 .False .False ) % Star Power
+            Call $WriteAddress ( 8010F290 1 0202 .False .False ) % Hammer & Boots
+            Call PlaySound ( 0010 ) % game saved
+            Call ShowMessageAtScreenPos ( $String_Stats_GearMax A0 28 )
+            Call DisablePlayerInput ( .False )
+            Return
+        Case == 3 % Cancel
+            Call CloseMessage
+            Wait 5
+            Call DisablePlayerInput ( .False )
+            Return
+    EndSwitch
+    Call CloseMessage
+    Wait 3
+    Call $WriteAddress ( *Var1 0 50` 0 .False ) % max1
+    Call $WriteAddress ( *Var1 0 50` 1 .False ) % max2
+    Call PlaySound ( 0010 ) % game saved
+    Call ShowMessageAtScreenPos ( $String_Stats_Max A0 28 )
+    Call DisablePlayerInput ( .False )
+    Return
+    End
+}
+
+#string $Choice_Stats % [STYLE:CHOICE:XCoords:YCoords:XLenght:YLenght]
+{
+[Style Choice pos=101,90 size=117,64]
+[StartChoice]
+[Option 0]HP[BR]
+[Option 1]FP[BR]
+[Option 2]Gear & SP[BR]
+[EndChoice cancel=3][End]
+}
+
+#string $String_Stats_Init
+{
+[Style Inspect]
+Which stat do you want to set[BR]
+to the max?
+[Yield][End]
+}
+
+#string $String_Stats_Max
+{
+[Style Inspect]
+[SaveColor][Color 0x7][Var 0][RestoreColor] set to the max.
+[Wait][End]
+}
+
+#string $String_Stats_GearMax
+{
+[Style Inspect]
+Boots, Hammer & SP to the max.
+[Wait][End]
+}
+
+#string $String_HP
+{
+HP[End]
+}
+
+#string $String_FP
+{
+FP[End]
+}
+
+% Give all partners
+#new:Script $Script_Partners
+{
+    Call DisablePlayerInput ( .True )
+    Set  *Var1 8010F2AC % Gombario's byte
+    Set  *Var0 8
+    % Enable all partners bytes and ranks
+    Loop *Var0
+        Call $WriteAddress ( *Var1 0 .True 0 .False ) % partner byte
+        Call $WriteAddress ( *Var1 0 2 1 .False ) % partner rank
+        Add  *Var1 8 % next partner data
+        If *Var1 == 8010F2CC % Goompa's data
+            Add *Var1 8 % skip goompa
+        EndIf
+    EndLoop
+    Call PlaySound ( 0010 ) % game saved
+    Call $WriteAddress ( 8010F298 0 30` .False .False )
+    Call ShowMessageAtScreenPos ( $String_Partners A0 28 )
+    Call GetCurrentPartnerID ( *Var0 )
+    If *Var0 == .Partner:None
+        Call $WriteAddress ( 8010F2A2 0 .Partner:Goombario .False .False ) % set current partner as goombario
+        Call GotoMap ( "tes_01" 1 )
+        Return
+    EndIf
+    Call DisablePlayerInput ( .False )
+    Return
+    End
+}
+
+#string $String_Partners
+{
+[Style Inspect]
+All partners unlocked[BR]
+and ultra ranked.
+[Wait][End]
+}
+
+% Give 999 coins
+#new:Script $Script_Money
+{
+    Call DisablePlayerInput ( .True )
+    Call AddCoin ( 999` )
+    Call PlaySound ( 0010 ) % game saved
+    Call ShowMessageAtScreenPos ( $String_Coins A0 28 )
+    Call DisablePlayerInput ( .False )
+    Return
+    End
+}
+
+#string $String_Coins
+{
+[Style Inspect]
+999 coins added.
+[Wait][End]
+}
+
+% Entries
+
+#new:Script $TrackEntry
+{
+    Call    GetLoadType ( *Var1 )
+    If *Var1 == .True
+        Exec    $Script_MakeExits
+        Exec	EnterSavePoint
+        Return
+    EndIf
+	Call     GetEntryID  	( *Var0 )
+	Switch *Var0
+        Case == 0 % Pipe
+            Set     *VarA  ~Entry:Entry0 % Entry ID
+            Set     *VarB  ~Collider:exit0 % Collider ID
+            Exec    $Enter_HorizontalPipe
+            Exec    $Script_MakeExits
+        Case == 1 % Partner Cane
+            Exec    $Script_MakeExits
+        Case == 2 % Save Block
+            Exec    $Script_MakeExits
+            Exec	EnterSavePoint
+        Case == 3 % Testing
+            Set		*Var0 $Script_MakeExits 
+			Exec    EnterWalk
+    EndSwitch
+    Return
+    End
+}
+
+#new:Script $Enter_HorizontalPipe
+{
+    Call 	 $WriteBitFlag ( 8010EFCC .False 2 5 .True ) % Make player invisible
+    Set     *MapVar[0] .True
+    Call     DisablePlayerPhysics 	( .True )
+	Call     HidePlayerShadow 	( .True )
+	Set		 *Var0  *VarA 
+	Call     $Function_GetColliderPos
+	Call     PlayerMoveTo 	( *Var1 *Var3 3 )
+	Set		 *Var0  *VarA 
+	Call     $Function_GetColliderPos
+	Call     SetPlayerPos 	( *Var1 *Var2 *Var3 )
+	Call     SetPlayerFlagBits 	( 00200000 .True )
+	Call     $Function_GetClamp
+	Call     InterpPlayerYaw 	( *Var0 0 )
+	Wait     2
+	Call     SetPlayerFlagBits 	( 00200000 .False )
+	Call     PlaySound   	( 0163 ) % Pipe sfx
+	Call     GetPlayerPos 	( *Var0 *Var1 *Var2 )
+    Add      *Var1 -40` % y
+    Call     SetPlayerPos 	( *Var0 *Var1 *Var2 )
+    Call 	 $WriteBitFlag ( 8010EFCC .False 2 5 .False ) % Force player to be visible
+    Wait     4
+    Call     802D286C ( 00000100 ) % SetAnimationFlags
+	Call     802D2520 ( 00010002 5 2 1 1 .False ) % SetPlayerAnimationFX
+    Loop 40` 
+        Add     *Var1 1 % y
+        Call    SetPlayerPos 	( *Var0 *Var1 *Var2 )
+        Wait    1
+    EndLoop
+    Wait    5
+    Call    802D2520 ( 00010000 .False .False .False .False .False )
+	Call    SetPlayerAnimation 	( .PlayerAnim:StandStill )
+    Call    DisablePlayerPhysics 	( .False )
+	Call    HidePlayerShadow 	( .False )
+    Loop
+        % Set MapVar0 always as false until the player falls
+        Call    $ReadAddress ( 8015A552 1 *Var0 .False .False )
+        If *Var0 == FFFF
+            Set     *MapVar[0] .False
+            BreakLoop
+        EndIf
+        Wait    1
+    EndLoop
+    Return
+    End
+}
+
+#new:Script $Leave_HorizontalPipe
+{
+    Call     DisablePartnerAI ( .True )
+    Call     DisablePlayerPhysics 	( .True )
+	Call     HidePlayerShadow 	( .True )
+	Set		 *Var0  *VarA 
+	Call     $Function_GetColliderPos
+	Call     PlayerMoveTo 	( *Var1 *Var3 3 )
+	Set		 *Var0  *VarA 
+	Call     $Function_GetColliderPos
+	Call     SetPlayerPos 	( *Var1 *Var2 *Var3 )
+	Call     SetPlayerFlagBits 	( 00200000 .True )
+	Call     $Function_GetClamp
+	Call     InterpPlayerYaw 	( *Var0 0 )
+	Wait     2
+	Call     SetPlayerFlagBits 	( 00200000 .False )
+	Call     PlaySound   	( 0163 ) % Pipe sfx
+	Call     GetPlayerPos 	( *Var0 *Var1 *Var2 )
+    Call     802D286C ( 00000800 ) % SetAnimationFlags
+	Call     802D2520 ( 00010002 5 2 1 1 .False ) % SetPlayerAnimationFX
+    Thread
+        Loop 40`
+            Add     *Var1 -1 % y
+            Call    SetPlayerPos 	( *Var0 *Var1 *Var2 )
+            Wait    1
+        EndLoop
+    EndThread
+    Wait     25`
+    Return
+    End
+}
+
+#new:Function $Function_GetColliderPos
+{
+    0:  ADDIU     SP, SP, FFE0
+    4:  SW        S1, 14 (SP)
+    8:  DADDU     S1, A0, R0
+    C:  SW        RA, 1C (SP)
+   10:  SW        S2, 18 (SP)
+   14:  JAL       ~Func:get_current_map_header
+   18:  SW        S0, 10 (SP)
+   1C:  DADDU     A0, S1, R0
+   20:  LIO       A1, *Var0
+   28:  JAL       ~Func:get_variable
+   2C:  DADDU     S2, V0, R0
+   30:  DADDU     A0, S1, R0
+   34:  LUI       A1, FE36
+   38:  LW        V1, 14 (S2)
+   3C:  SLL       S0, V0, 4
+   40:  ADDU      V1, S0, V1
+   44:  LWC1      F0, 0 (V1)
+   48:  TRUNC.W.S F2, F0
+   4C:  MFC1      A2, F2
+   50:  JAL       ~Func:set_variable
+   54:  ORI       A1, A1, 3C81
+   58:  DADDU     A0, S1, R0
+   5C:  LW        V0, 14 (S2)
+   60:  LUI       A1, FE36
+   64:  ADDU      V0, S0, V0
+   68:  LWC1      F0, 4 (V0)
+   6C:  TRUNC.W.S F2, F0
+   70:  MFC1      A2, F2
+   74:  JAL       ~Func:set_variable
+   78:  ORI       A1, A1, 3C82
+   7C:  DADDU     A0, S1, R0
+   80:  LW        V0, 14 (S2)
+   84:  LUI       A1, FE36
+   88:  ADDU      V0, S0, V0
+   8C:  LWC1      F0, 8 (V0)
+   90:  TRUNC.W.S F2, F0
+   94:  MFC1      A2, F2
+   98:  JAL       ~Func:set_variable
+   9C:  ORI       A1, A1, 3C83
+   A0:  DADDU     A0, S1, R0
+   A4:  LW        V0, 14 (S2)
+   A8:  LUI       A1, FE36
+   AC:  ADDU      S0, S0, V0
+   B0:  LWC1      F0, C (S0)
+   B4:  TRUNC.W.S F2, F0
+   B8:  MFC1      A2, F2
+   BC:  JAL       ~Func:set_variable
+   C0:  ORI       A1, A1, 3C84
+   C4:  LW        RA, 1C (SP)
+   C8:  LW        S2, 18 (SP)
+   CC:  LW        S1, 14 (SP)
+   D0:  LW        S0, 10 (SP)
+   D4:  ADDIU     V0, R0, 2
+   D8:  JR        RA
+   DC:  ADDIU     SP, SP, 20
+}
+
+#new:Function $Function_GetClamp
+{
+    0:  LAW       V1, 80077410
+    8:  LIF       F12, 180.0
+   10:  ADDIU     SP, SP, FFE8
+   14:  SW        RA, 14 (SP)
+   18:  SW        S0, 10 (SP)
+   1C:  SLL       V0, V1, 2
+   20:  ADDU      V0, V0, V1
+   24:  SLL       V0, V0, 2
+   28:  SUBU      V0, V0, V1
+   2C:  SLL       V1, V0, 3
+   30:  ADDU      V0, V0, V1
+   34:  SLL       V0, V0, 3
+   38:  LTF       F0, V0 (800B1DEC)
+   44:  ADD.S     F12, F0, F12
+   48:  JAL       ~Func:clamp_angle
+   4C:  DADDU     S0, A0, R0
+   50:  TRUNC.W.S F2, F0
+   54:  SWC1      F2, 84 (S0)
+   58:  LW        RA, 14 (SP)
+   5C:  LW        S0, 10 (SP)
+   60:  ADDIU     V0, R0, 2
+   64:  JR        RA
+   68:  ADDIU     SP, SP, 18
+}
+
+% Entities
+
+#new:Script $Script_MakeEntities
+{
+Call     MakeEntity  	( .Entity:HealingBlock ~Vec4d:HealBlock 80000000 )
+Call     MakeEntity  	( .Entity:SavePoint ~Vec4d:SaveBlock 80000000 )
+Return
+End
+}
+
+% Npcs
+
+#new:NpcGroupList $NpcGroupList_tes01
+{
+00000001 $NpcGroup_Statue 	2F000000
+00000000 00000000 00000000 
+}
+
+#new:NpcGroup $NpcGroup_Statue
+{
+00000000 $NpcSettings_Statue 0.0 1000.0 0.0
+00A40D01 $NpcScript_Init_Statue 00000000 00000000 00000000 
+~NoItems ~NoHP ~NoFP ~NoCoinBonus ~NoMovement
+00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 
+00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 00AE0001 
+00000000 00000000 00000000 00000000
+}
+
+#new:NpcSettings $NpcSettings_Statue
+{
+00000000 00200025 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00630000 
+}
+
+#new:Script $NpcScript_Init_Statue
+{
+    Call     BindNpcIdle ( .Npc:Self $Script_NpcIdle_Statue )
+	Return
+	End
+}
+
+#new:Script $Script_NpcIdle_Statue
+{
+    Loop
+        Call    GetSelfVar ( 0 *Var0 )
+        If *Var0 == .True
+            Call    DisablePlayerInput ( .False )
+            ResumeOthers .True
+            Call    PlaySound ( 20F3 )
+            Call    GetColliderCenter ( ~Collider:col_fight )
+            Add     *Var0 -5` % x
+            Add     *Var1 25` % y
+            Call	PlayEffect ( ~FX:LensFlare:Rotating *Var0 *Var1 *Var2 40` .False .False .False .False .False .False .False .False )
+            Call    GetColliderCenter ( ~Collider:col_fight )
+            Add     *Var0 7` % x
+            Add     *Var1 25` % y
+            Call	PlayEffect ( ~FX:LensFlare:Rotating *Var0 *Var1 *Var2 40` .False .False .False .False .False .False .False .False )
+            Wait    30`
+            Call    SetSelfVar ( 0 .False )
+            Call    StartBattleWith ( .Song:FinalBowserBattle )
+            BreakLoop
+        EndIf
+        Wait 1
+    EndLoop
+    Return
+    End
+}
+
+% Exits
+
+#new:Script $Script_MakeExits
+{
+Bind     $Script_Exit0 .Trigger:FloorAbove ~Collider:exit0 00000001 00000000
+Return
+End	
+}
+
+#new:Script $Script_Exit0
+{
+    Set  *VarA  ~Entry:Entry0 % Entry ID
+	Set  *VarB  ~Collider:exit0 % Collider ID
+    ExecWait $Script_TopPipe_TrackJoystick
+    Return
+    End
+}
+
+#new:Script $Script_TopPipe_TrackJoystick
+{
+	Call     $Function_TrackJoystick
+	If  *Var0  ==  .False
+		Return
+	EndIf
+    % If the player came from a pipe and hasn't leave the pipe
+    If *MapVar[0] == .True
+        Return
+    EndIf
+	Call     GetCurrentPartner ( *Var0 )
+	If  *Var0  !=  .Partner:None
+		Call     GetCurrentPartnerID 	( *Var1 )
+		If  *Var1  !=  .Partner:Watt
+			Return
+		Else
+			Call     802D2B6C
+			Call     DisablePlayerInput 	( .True )
+		EndIf
+	Else
+		Call     DisablePlayerInput 	( .True )
+	EndIf
+	Unbind
+	ExecWait    $Leave_HorizontalPipe
+    Call        ClearAmbientSounds ( 00000001 )
+    Call    	GotoMap ( "kmr_20" 5 )
+	Return
+	End
+}
+
+#new:Function $Function_TrackJoystick
+{
+    0:  LAH       V1, 8015A552
+    8:  ADDIU     SP, SP, FFE8
+    C:  SW        S0, 10 (SP)
+   10:  DADDU     S0, A0, R0
+   14:  SW        RA, 14 (SP)
+   18:  LW        V0, B0 (S0)
+   1C:  BEQ       V1, V0, .o2C
+   20:  ADDIU     V0, R0, 2
+   24:  BEQ       R0, R0, .oAC
+   28:  SW        R0, 84 (S0)
+        .o2C
+   2C:  LAW       V1, 8007419C
+   34:  LB        V0, 40 (V1)
+   38:  LB        A3, 44 (V1)
+   3C:  BLTZL     V0, .o44
+   40:  SUBU      V0, R0, V0
+        .o44
+   44:  BNE       V0, R0, .o54
+   48:  NOP
+   4C:  BEQL      A3, R0, .oAC
+   50:  DADDU     V0, R0, R0
+        .o54
+   54:  MTC1      V0, F4
+   58:  NOP
+   5C:  CVT.S.W   F4, F4
+   60:  MFC1      A2, F4
+   64:  MTC1      A3, F4
+   68:  NOP
+   6C:  CVT.S.W   F4, F4
+   70:  MTC1      R0, F12
+   74:  MFC1      A3, F4
+   78:  JAL       ~Func:atan2
+   7C:  MOV.S     F14, F12
+   80:  LIF       F2, 60.0
+   88:  NOP
+   8C:  C.LT.S    F0, F2
+   90:  NOP
+   94:  BC1F      .oA8
+   98:  ADDIU     V0, R0, 1
+   9C:  SW        V0, 84 (S0)
+   A0:  BEQ       R0, R0, .oAC
+   A4:  ADDIU     V0, R0, 2
+        .oA8
+   A8:  DADDU     V0, R0, R0
+        .oAC
+   AC:  LW        RA, 14 (SP)
+   B0:  LW        S0, 10 (SP)
+   B4:  JR        RA
+   B8:  ADDIU     SP, SP, 18
+}
+
+% Tattle
+
+#new:Function $Function_GetTattle
+{
+LIO       V0, $MapTattle
+JR        RA
+RESERVED
+}
+	
+#string $MapTattle
+{
+[Style Tattle]
+[EnableCDownNext]What a strange place Mario.
+[Wait][End]
+}

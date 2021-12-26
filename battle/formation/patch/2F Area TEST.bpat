@@ -1,0 +1,176 @@
+% All actor data are placed in globals/patch/enemies
+
+% ====================================================
+% Formations
+% ====================================================
+
+#new:FormationTable $FormationTable_2F
+{
+00000000 0000000F $Formation_AllBosses   $Stage_mim02 00000000 % 0
+%00000000 00000002 $Formation_Testing	 $Stage_mim02 00000000 % 1
+00000000 00000000 00000000 00000000 00000000
+}
+
+#new:Formation $Formation_Testing
+{
+	$2F_CrystalKing 	$HomePos_CrystalKing 00000001 00000000 00000000 00000000 00000000
+    $2F_Bowser	 		$HomePos_Bowser 00000000 00000000 00000000 00000000 00000000
+}
+
+#new:Formation $Formation_AllBosses
+{
+% prologue
+$2F_GoombaKing 		$HomePos_GoombaKing 00000013 00000000 00000000 00000000 00000000
+% chapter 1
+$2F_GNinjakoopa 	$HomePos_Ninja1 00000012 00000000 00000000 00000000 00000000
+$2F_YNinjakoopa 	$HomePos_Ninja2 00000011 00000000 00000000 00000000 00000000
+$2F_BNinjakoopa 	$HomePos_Ninja3 00000010 00000000 00000000 00000000 00000000
+$2F_RNinjakoopa 	$HomePos_Ninja4 0000000F 00000000 00000000 00000000 00000000
+$2F_FakeBowser      00000003 0000000E 00000000 00000000 00000000 00000000 %/
+% chapter 2
+$2F_Tutankoopa 		$HomePos_Tutankoopa 0000000D 00000000 00000000 00000000 00000000
+% chapter 3
+%$2F_TubbaBlubba 	$HomePos_Tubba 0000000C 00000000 00000000 00000000 00000000
+$2F_TubbasHeart 	$HomePos_TubbaHeart 0000000B 00000000 00000000 00000000 00000000
+% chapter 4
+$2F_GeneralGuy	 	00000002 00000009 00000000 00000000 00000000 00000000
+$2F_ToyTank 		00000001 0000000A 00000000 00000000 00000000 00000000
+$2F_LightBulb	 	00000007 0000000B 00000000 00000000 00000000 00000000 %/
+% chapter 5
+$2F_LavaPiranha 	$HomePos_LavaPiranha 00000003 00000000 00000000 00000000 00000000 %/
+% chapter 6
+$2F_HuffNPuff	 	$HomePos_HuffPuff 00000002 00000000 00000000 00000000 00000000
+% chapter 7
+$2F_CrystalKing 	$HomePos_CrystalKing 00000001 00000000 00000000 00000000 00000000
+% chapter 8
+$2F_Bowser	 		$HomePos_Bowser 00000000 00000000 00000000 00000000 00000000
+}
+
+#new:Vector3D $HomePos_GoombaKing
+{ -24` 0` -27` }
+
+#new:Vector3D $HomePos_RedGoomba1
+{ -56` 0` -13` }
+
+#new:Vector3D $HomePos_BlueGoomba2
+{ -17` 0` 9` }
+
+#new:Vector3D $HomePos_Ninja1
+{ 51` 0 49` }
+
+#new:Vector3D $HomePos_Ninja2
+{ 77` 0 55` }
+
+#new:Vector3D $HomePos_Ninja3
+{ 105` 0 62` }
+
+#new:Vector3D $HomePos_Ninja4
+{ 134` 0 68` }
+
+#new:Vector3D $HomePos_Tutankoopa
+{ 97` 70` 17` }
+
+% unused %
+#new:Vector3D $HomePos_Tutankoopa_Shell1
+{ 70` 70` 3` }
+
+#new:Vector3D $HomePos_Tutankoopa_Shell2
+{ 80` 70` -7` }
+
+#new:Vector3D $HomePos_Tutankoopa_Shell3
+{ 60` 70` -7` }
+% %
+
+#new:Vector3D $HomePos_Tubba
+{ 43` 0` -34` }
+
+#new:Vector3D $HomePos_TubbaHeart
+{ 35` 0` 16` }
+
+#new:Vector3D $HomePos_LavaPiranha
+{ 60` 60` 0` }
+
+#new:Vector3D $HomePos_HuffPuff
+{ 23` 94` -62` }
+
+#new:Vector3D $HomePos_CrystalKing
+{ 15` 0` 9` }
+
+/% This ones are in 2F_CrystalKing.patch
+
+#new:Vector3D $HomePos_BitA
+{ -25` 43` 18` }
+
+#new:Vector3D $HomePos_BitB
+{ 6` 78` 18` }
+
+#new:Vector3D $HomePos_BitC
+{ 44` 58` 43` }%/
+
+#new:Vector3D $HomePos_Bowser
+{ 175` 0` -10` }
+
+% ====================================================
+% Stages
+% ====================================================
+
+#new:StageTable $StageTable 
+{
+"pt1_6" $Stage_mim02
+00000000 00000000 
+}
+
+#new:Stage $Stage_mim02
+{
+	"mim_tex"
+	"mim_bt02_shape"
+	"mim_bt01_hit"
+	$Script_BeforeBattle
+	$Script_AfterBattle
+	00000000
+	00000000
+	00000000
+	00000000
+	00000000
+}
+
+#new:Script $Script_BeforeBattle
+{
+	Call	SetSpriteShading	( FFFFFFFF )
+	Call  	$Function_EnableFog
+	Call	SetCamBGColor		( .Cam:Battle 00000000 00000000 00000000 )
+	Return
+	End
+}
+
+#new:Script $Script_AfterBattle
+{
+	Return
+	End
+}
+
+#new:Function $Function_EnableFog
+{
+    0:  ADDIU     SP, SP, FFE8
+    4:  SW        RA, 10 (SP)
+    8:  JAL       ~Func:enable_world_fog
+    C:  NOP
+   10:  LI        A0, 3B6
+   14:  JAL       ~Func:set_world_fog_dist
+   18:  LI        A1, 3E8
+   1C:  LI        A0, 10
+   20:  COPY      A1, A0
+   24:  COPY      A2, A0
+   28:  JAL       ~Func:set_world_fog_color
+   2C:  LI        A3, FF
+   30:  LA        V0, 800B1D80
+   38:  LI        V1, 14
+   3C:  SH        V1, 584 (V0)
+   40:  SH        V1, 586 (V0)
+   44:  LI        V1, 1C
+   48:  SH        V1, 588 (V0)
+   4C:  LW        RA, 10 (SP)
+   50:  LI        V0, 2
+   54:  JR        RA
+   58:  ADDIU     SP, SP, 18
+}

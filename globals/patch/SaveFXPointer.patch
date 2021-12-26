@@ -1,0 +1,19 @@
+% Always save the last FX in $Data_LastFX
+
+% PlayEffect save last FX pointer
+@Hook FE040 % 802D9690
+{
+    SAW     V0, $Data_LastFX % V0 = FX pointer
+    BEQ 	S5, R0, .End
+    RESERVED
+    % SaveFX in VarF too
+    J       802D9698
+    LUI	    A1, FE36
+    .End
+    % Don't save FX in VarF
+    J       802D96A8
+    LUI	    A1, FE36
+}
+
+#export:Data $Data_LastFX
+{ 00000000 }

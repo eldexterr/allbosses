@@ -1,0 +1,10 @@
+#message:2F:000
+{
+Berserker[End]
+}
+
+#message:2F:001
+{
+Mario's attack increases by 2.[BR]
+But he is controlled by the CPU.[End]
+}

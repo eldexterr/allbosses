@@ -1,0 +1,200 @@
+/%% This file handle all the hooks that needs to be running at all time (And a few other misc stuff)
+
+@Hook 82758 % 800E92A8
+{
+JAL     $Debugging_TestStuffwLButton
+NOP
+J       800E92B0
+LW      RA, 008C (SP)
+}%/
+
+%%%% Printing Code made by Rain %%%%%
+#new:Data $PointerToStoreAsciiTo
+{
+00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 %allocate space to store result
+}
+
+#new:Data $PointerToStoreStringTo
+{
+FF0D0F0F % set font to 0F width, 0F height
+FF0500F7 % set color to 00 (black)
+00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000
+}
+
+#new:Data $Formatters
+{
+20202020 20202020 20202020 20202564 00000000
+%above hex is ascii for: "        %d"
+}
+
+#string $String_x
+{
+x[End]
+}
+
+% Made by Rain
+#new:Function $ConvertAsciiToPM64String %takes args a0, a1
+{
+% a0 = where to store converted result
+% a1 = where to read from
+PUSH a0, a1
+ORI t1, r0, 0020 %space
+.loop
+LB t0, 0000 (a1)
+BEQ t0, r0, .endofascii
+NOP
+BEQ t0, t1, .isspace
+NOP
+ADDIU t0, t0, FFE0 %subtract 0x20 from ascii to get pm64 string hex
+.store
+SB t0, 0008 (a0)
+ADDIU a0, a0, 0001
+BEQ r0, r0, .loop
+ADDIU a1, a1, 0001
+.endofascii
+ORI t0, r0, 00FD %pm64 string terminator
+SB t0, 0008 (a0) %store terminator
+POP a0, a1
+JR RA
+NOP
+.isspace
+BEQ r0, r0, .store
+ORI t0, r0, 00F7
+}
+
+#export $ConvertAsciiToPM64String
+
+#new:ASCII $ASCII_Format_Half
+{
+"%5u"
+}
+
+#new:ASCII $ASCII_Format_Byte
+{
+"%3u"
+}
+
+#new:ASCII $ASCII_Format_Time
+{
+"%02u"
+}
+
+#new:ASCII $ASCII_Buffer
+{
+"          "
+}
+
+#string $String_Buffer
+{
+[Color:00]             [END]
+}
+
+#new:ASCII $ASCII_Format_UByte
+{
+"%2u"
+}
+
+#string $String_Buffer_Color0A
+{
+[Color:0A]             [END]
+}
+
+#export $ASCII_Buffer
+#export $ASCII_Format_UByte % used by PartnersHP.patch
+#export $String_Buffer_Color0A % used by PartnersHP.patch
+
+#new:Function $ToogleCheats
+{
+    PUSH    RA, A0, A1, A2, A3, V0, V1
+    LABU    T0, 80074037 % one time inputs
+    ANDI    T1, T0, 20 % bit5 / L Button
+    BEQ     T1, R0, .End
+    NOP
+    LABU    T0, 80074098 % Cheats
+    ORI     T1, R0, 4
+    BEQL    T0, T1, .SetCheat
+    CLEAR   T0 % Set Back to Zero
+    ADDIU   T0, T0, 1
+    .SetCheat
+    SAB     T0, 80074098
+    % Play Sound
+    ADDIU	A0, R0, 00C7 % sfx
+    CLEAR 	A1
+    COPY 	A2, A1
+    JAL 	~Func:sfx_adjust_env_sound_pos
+    COPY 	A3, A1
+    .End
+    % Print Current Cheat
+    % Convert Data to ASCII
+    LIO     A0, $ASCII_Buffer          % Pointer to Save ASCII
+    LIO     A1, $ASCII_Format_Byte     % Type of Format to use
+    LABU 	A2, 80074098		   % Data to Format
+    JAL     ~Func:sprintf
+    RESERVED
+    % Convert ASCII to String and Print
+    LIO     A1, $ASCII_Buffer       % previously converted ASCII
+    LIO     A0, $String_Buffer      % Pointer to Save Final String
+    JAL     $ConvertAsciiToPM64String % The final result will be stored in A0
+    RESERVED
+    ORI     A1, R0, 0075 % x pos
+    ORI     A2, R0, 00CA % y pos
+    SW      R0, 0014 (SP) % text fx / 0 = none
+    JAL     ~Func:draw_string
+    ORI     A3, R0, 00FF
+    POP     RA, A0, A1, A2, A3, V0, V1
+    JR      RA
+    NOP
+}
+
+#new:Function $Debugging_TestStuffwLButton
+{
+    PUSH    RA, A0, A1, A2, A3, V0, V1
+    % check the player is inside battle
+    LABU    T0, 80074094 % game state
+    ORI     T1, R0, 1
+    BEQ     T0, T1, .End
+    NOP
+    % check L button
+    LABU    T0, 80074037 % 1 Frame Inputs
+    ANDI    T0, T0, 20 % bit5 = L button
+    BEQ     T0, R0, .End
+    NOP
+    % do this when pressing L
+    JAL     $Function_Debugging_RunTestScript
+    NOP
+    .End
+    POP     RA, A0, A1, A2, A3, V0, V1
+    JR      RA
+    NOP
+}
+
+#new:Function $Function_Debugging_RunTestScript
+{
+    PUSH    RA
+    CLEAR   A2
+    LIA	    A0, $Script_Debugging_LButton
+    JAL	    ~Func:start_script
+    ADDIU	A1, R0, 1
+    POP     RA
+    JR      RA
+    NOP
+}
+
+#new:Script:Map $Script_Debugging_LButton
+{
+    SetGroup 0
+    SuspendAll 2
+    Call    DisablePlayerInput ( .True )
+    Call    GotoMap ( $ASCII_tes00 4 )
+    %Call    GotoMap ( $ASCII_tes01 0 )
+    Return
+    End
+}
+
+#new:ASCII $ASCII_tes00
+{ "tes_00" }
+
+#new:ASCII $ASCII_tes01
+{ "tes_01" }
